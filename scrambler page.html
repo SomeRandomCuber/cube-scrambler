@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>yo wanna scramble cubes?</title>
+        <script src="https://cdn.cubing.net/esm/cubing/twisty" type="module" defer></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+        <script src="./cube_visual.js" type="text/javascript"></script>
+    </head>
+    <body onload="onLoadFunction()">
+    <!-- <body> -->
+        <h1>scramble:</h1>
+        <h3 id="scramble"></h3>
+        <button type="button" onclick="generateScrambleOnClick()">generate new scramble!</button> <br>
+        <button onclick="printPreviousScramble()" class="whichscramble btn btn-success" style="display: none;">previous scramble</button> 
+        <button onclick="printNextScramble()" class="whichscramble btn btn-success" style="display: none;">next scramble</button> <br>
+        <label for="scramblelength">scramble length: </label><input type="number" id="scramblelength" value="25"> <br>
+        
+        
+        <canvas id="scrambleimage" width="0" height="0"></canvas>
+        <div id="twistyplayer"></div> <br>
+    
+        <label for="inputtedscramble">input your own scramble!</label><input type="text" id="inputtedscramble" width="500">
+        <button id="submitscrambleinput" onclick="submitScramble()">submit</button> <br>
+        <div id="colorselection">
+        <label for="white">color white:</label><input type="color" id="white" value="#FFFFFF" oninput="updateColors()">
+        <label for="red">color red:</label><input type="color" id="red" value="#FF0000" oninput="updateColors()">
+        <label for="green">color green:</label><input type="color" id="green" value="#008000" oninput="updateColors()">
+        <label for="yellow">color yellow:</label><input type="color" id="yellow" value="#FFFF00" oninput="updateColors()">
+        <label for="orange">color orange:</label><input type="color" id="orange" value="#FFA500" oninput="updateColors()">
+        <label for="blue">color blue:</label><input type="color" id="blue" value="#0000FF" oninput="updateColors()">
+        <button onclick="repeatRandomizeColors()">random!</button>
+        </div>
+        
+        <script>
+            var turns = ["U", "D", "R", "L", "F", "B"];
+            var allScrambles;
+            var currentScrambleIndex;
+            var scramLength;
+            function createScramble() {
+                
+                var turnType = ["", "'", "2"];
+                var scramble = "";
+                var allTurns = [];
+                
+                var i = 0;
+                while (i < scramLength) {
+                    var thisTurn = turns[getRandomInt(turns.length)]
+                    if (isValidTurn(allTurns, thisTurn)) {
+                        
+                        scramble += thisTurn + turnType[getRandomInt(turnType.length)] + " ";
+
+                        allTurns.push(thisTurn);
+                        i++;
+                    }
+                }
+                allScrambles.push(scramble);
+                currentScrambleIndex = allScrambles.length - 1;
+                return scramble;
+            }
+            
+            function displayWhichScrambleButtons() {
+                var whichScrambleButtons = document.getElementsByClassName("whichscramble");
+                if (allScrambles.length < 2) {
+                    whichScrambleButtons[0].style.display = "none";
+                    whichScrambleButtons[1].style.display = "none"
+                } else if (allScrambles.length >= 2) {
+                    whichScrambleButtons[0].style.display = "inline";
+                    whichScrambleButtons[1].style.display = "inline"
+                }
+                whichScrambleButtons[0].disabled = currentScrambleIndex == 0;
+                whichScrambleButtons[1].disabled = currentScrambleIndex == allScrambles.length - 1;
+            }
+            function isValidTurn(pastTurns, currentTurn) {
+                if (pastTurns[pastTurns.length-1] === currentTurn) return false;
+                if (currentTurn === "U" || currentTurn === "R" || currentTurn == "F") {
+                    if (pastTurns[pastTurns.length - 1] === turns[turns.indexOf(currentTurn) + 1]) {
+                        if (pastTurns[pastTurns.length - 2] === currentTurn) return false
+                    }
+                }
+                if (currentTurn === "D" || currentTurn === "L" || currentTurn === "B") {
+                    if (pastTurns[pastTurns.length - 1] === turns[turns.indexOf(currentTurn) - 1]) {
+                        if (pastTurns[pastTurns.length - 2] === currentTurn) return false
+                    }
+                }
+                return true
+            }
+            function showNewScramble() {
+                document.getElementById("scramble").innerHTML = createScramble();
+            }
+            function getRandomInt(zeroTo_){
+                return Math.floor(Math.random() * (zeroTo_))
+            }
+            
+            function submitScramble() {
+
+                var inputtedScramble = document.getElementById("inputtedscramble").value;
+                if (isValidInput(inputtedScramble)) {
+                    if (inputtedScramble.charAt(inputtedScramble.length - 1) !== " ") {
+                        inputtedScramble += " " // to standardize input, same as generate function  
+                    }
+                    allScrambles.push(inputtedScramble);
+                    currentScrambleIndex = allScrambles.length - 1;
+                    document.getElementById("scramble").innerHTML = inputtedScramble;
+                    visualizeScramble();
+                    displayWhichScrambleButtons();
+                } else if (!isValidInput(inputtedScramble)) {
+                    alert("invalid input: " + inputtedScramble);
+                    document.getElementById('inputtedscramble').value = '';
+                }
+            }
+
+            function isValidInput(input) {
+                var hasWrongCharacter = input.match(/[^RBFULD' 2]/)
+                return !hasWrongCharacter; // rejects if it has a wrong character
+            }
+            
+        </script>
+        <script>
+            
+            window.onLoadFunction = function onLoadFunction() {
+                allScrambles = [];
+                currentScrambleIndex = -1;
+                scramLength = 25;
+                playerArray = [];
+                updateColors();
+            }
+            function updateColors() {
+                var white = document.getElementById('white').value;
+                var red = document.getElementById('red').value;
+                var green = document.getElementById('green').value;
+                var yellow = document.getElementById('yellow').value;
+                var orange = document.getElementById('orange').value;
+                var blue = document.getElementById('blue').value;
+                getColors(white, red, green, yellow, orange, blue)
+                drawAllFaces();
+            }
+            function generateRandomHex() {
+                var randomNumber = Math.floor(Math.random()*16);
+                switch (randomNumber) {
+                    case 10: return "A";
+                    case 11: return "B";
+                    case 12: return "C";
+                    case 13: return "D";
+                    case 14: return "E";
+                    case 15: return "F";
+                    default: return randomNumber;
+                }
+            }
+            function generateRandomColor(color) {
+                // var newColor = "#"
+                // for (i = 0; i < 6; i++) {
+                //     newColor += generateRandomHex();
+                // }
+                // return newColor;
+                switch (color) {
+                    case 'w' : return hslToHex(randomNumber(0,360), randomNumber(0,100), randomNumber(85,100));
+                    case 'r' : return hslToHex(randomNumber(320,370)%360,randomNumber(80,100), randomNumber(35,65));
+                    case 'g' : return hslToHex(randomNumber(85,145), randomNumber(50,100), randomNumber(30,70));
+                    case 'y' : return hslToHex(randomNumber(55,70), randomNumber(70,100), randomNumber(35,75));
+                    case 'o' : return hslToHex(randomNumber(30,50), randomNumber(50,100), randomNumber(40,70));
+                    case 'b' : return hslToHex(randomNumber(170,260), randomNumber(30,100), randomNumber(25,70));
+                }
+            }
+            function randomNumber(min, max) { 
+                return Math.floor(Math.random() * (max - min) + min+0.5);
+            }
+            function hslToHex(h, s, l) {
+                l /= 100;
+                const a = s * Math.min(l, 1 - l) / 100;
+                const f = n => {
+                    const k = (n + h / 30) % 12;
+                    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                    return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
+                };
+                return `#${f(0)}${f(8)}${f(4)}`;
+            }
+            function randomizeColors() {
+                document.getElementById('white').value = generateRandomColor('w');
+                document.getElementById('red').value = generateRandomColor('r');
+                document.getElementById('green').value = generateRandomColor('g');
+                document.getElementById('yellow').value = generateRandomColor('y');
+                document.getElementById('orange').value = generateRandomColor('o');
+                document.getElementById('blue').value = generateRandomColor('b');
+                updateColors();
+            }
+            function repeatRandomizeColors() {
+                var timesRan = 0;
+                var intervalNumber = setInterval(()=> {
+                    if (timesRan == 15) {
+                        clearInterval(intervalNumber);
+                    } else {
+                        timesRan++
+                        randomizeColors();
+                    }
+                },200)
+
+            }
+            var canvas = document.getElementById("scrambleimage");
+            canvas.width = 500;
+            canvas.height = 400;
+            useCanvas(canvas);
+            function applyTurns() {
+                var turnArray = (allScrambles[currentScrambleIndex]).split(" ");
+                turnArray.pop();
+                console.log("turnArray length: *" + turnArray.length + "* scramble: " + allScrambles[currentScrambleIndex] + ", turnArray: " + turnArray)
+                for (index = 0; index < turnArray.length; index++) {
+                    
+                    doTurn(turnArray[index]);
+                    // console.log("turn: " + turnArray[index])
+                }
+            }
+            function generateScrambleOnClick() {
+                scramLength = document.getElementById("scramblelength").value;
+                showNewScramble(); 
+                displayWhichScrambleButtons(); 
+                console.log("new: currentScrambleIndex = " + currentScrambleIndex)
+                visualizeScramble();
+            }
+            function printPreviousScramble() {
+                if (0 < currentScrambleIndex) {
+                    currentScrambleIndex--;
+                    document.getElementById("scramble").innerHTML = allScrambles[currentScrambleIndex];
+                    console.log("last: currentScrambleIndex = " + currentScrambleIndex)
+                }
+                displayWhichScrambleButtons()
+                visualizeScramble();
+            }
+
+            function printNextScramble() {
+                if (currentScrambleIndex < allScrambles.length - 1) {
+                    currentScrambleIndex++;
+                    document.getElementById("scramble").innerHTML = allScrambles[currentScrambleIndex];
+                    console.log("next: currentScrambleIndex = " + currentScrambleIndex)
+                }
+                displayWhichScrambleButtons();
+                visualizeScramble();
+            }
+            
+            function visualizeScramble() {
+                    resetStickers()
+                    applyTurns()
+                    drawAllFaces() 
+                
+            }
+        
+        
+        </script>
+        <!-- <script type="module">
+            import { parseAlg } from "https://cdn.cubing.net/esm/cubing/alg";
+            import { TwistyPlayer } from "https://cdn.cubing.net/esm/cubing/twisty";
+            var playerArray;
+            window.onLoadFunction = function onLoadFunction() {
+                allScrambles = [];
+                currentScrambleIndex = -1;
+                scramLength = 25;
+                playerArray = [];
+                document.getElementById("twistyplayer").appendChild(createNewTwistyPlayer());
+            }
+            function createNewTwistyPlayer() {
+                var player = new TwistyPlayer({
+                    puzzle: "3x3x3",
+                    alg: (playerArray.length > 0 ? parseAlg(allScrambles[currentScrambleIndex]) : parseAlg("")),
+                    visualization: "2D",
+                    controlPanel: "none",
+                    background: "none"
+                });
+                playerArray.push(player);
+                return player;
+            }
+            function visualizeScramble() {
+                    document.getElementById("twistyplayer").replaceChild(createNewTwistyPlayer(), playerArray[playerArray.length - 2]); 
+            }
+            window.generateScrambleOnClick = function generateScrambleOnClick() {
+                scramLength = document.getElementById("scramblelength").value;
+                showNewScramble(); 
+                displayWhichScrambleButtons(); 
+                console.log("new: currentScrambleIndex = " + currentScrambleIndex)
+                visualizeScramble();
+            }
+            window.printPreviousScramble = function printPreviousScramble() {
+                if (0 < currentScrambleIndex) {
+                    currentScrambleIndex--;
+                    document.getElementById("scramble").innerHTML = allScrambles[currentScrambleIndex];
+                    console.log("last: currentScrambleIndex = " + currentScrambleIndex)
+                }
+                displayWhichScrambleButtons()
+                visualizeScramble();
+            }
+
+            window.printNextScramble = function printNextScramble() {
+                if (currentScrambleIndex < allScrambles.length - 1) {
+                    currentScrambleIndex++;
+                    document.getElementById("scramble").innerHTML = allScrambles[currentScrambleIndex];
+                    console.log("next: currentScrambleIndex = " + currentScrambleIndex)
+                }
+                displayWhichScrambleButtons();
+                visualizeScramble();
+            }
+
+        </script> -->
+    </body>
+</html>
