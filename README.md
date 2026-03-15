@@ -1,0 +1,2 @@
+<h1>My Rubik's cube scrambler</h1>
+<p>It creates a randomly generated 25 move scramble, and includes a 2d visualization of the cube after the moves were done on it. The visualization is done with canvas, implemented in cube_visual.js. You can change the generated scramble length, the colors of each face, and draw your own scramble. The scrambles are saved in order, so you can look at previous scrambles, and finally the random button generates random shades of the colors for each of the faces.</p>
